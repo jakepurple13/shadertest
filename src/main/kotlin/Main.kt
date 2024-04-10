@@ -1,6 +1,8 @@
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -127,5 +129,21 @@ vec4 main( vec2 fragCoord ) {
 fun main() = application {
     Window(onCloseRequest = ::exitApplication) {
         App()
+    }
+
+    Window(
+        onCloseRequest = {},
+        transparent = false,
+        alwaysOnTop = true
+    ) {
+        MaterialTheme(darkColors()) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+            ) {
+                currentIssue?.stackTraceToString()?.let { Text(it) }
+            }
+        }
     }
 }

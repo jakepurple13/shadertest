@@ -10,6 +10,8 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import org.jetbrains.skia.RuntimeShaderBuilder
 import kotlin.math.round
 
+var currentIssue by mutableStateOf<Throwable?>(null)
+
 /**
  * Interface to describe shaders supported by the [shaderBackground] Modifier.
  */
@@ -74,7 +76,8 @@ internal interface RuntimeEffect {
 
 class NonAndroidRuntimeEffect(shader: Shader) : RuntimeEffect {
     private val compositeRuntimeEffect = runCatching { org.jetbrains.skia.RuntimeEffect.makeForShader(shader.sksl) }
-        .onFailure { it.printStackTrace() }
+        .onFailure { currentIssue = it }
+        .onSuccess { currentIssue = null }
         .getOrNull()
     private val compositeShaderBuilder = compositeRuntimeEffect?.let { RuntimeShaderBuilder(it) }
 
@@ -96,14 +99,13 @@ internal fun buildEffect(shader: Shader): RuntimeEffect {
     return NonAndroidRuntimeEffect(shader)
 }
 
-
 /**
  * Draw's the shader as background via the [drawBehind] modifier.
  *
  * When running on Android 13 or newer (Tiramisu), usage of this API renders the shader.
  * On older Android devices, the provided [fallback] Brush is used instead.
  *
- * @param shader Shader to use to draw. [Shader] class. Example [com.mikepenz.hypnoticcanvas.shaders.GlossyGradients].
+ * @param shader Shader to use to draw. [Shader] class.
  * @param speed Adjusts how fast the shader is animated
  * @param fallback The fallback brush to draw on unsupported devices
  */
@@ -113,7 +115,7 @@ fun Modifier.shaderBackground(
     speed: Float = 1f,
     fallback: () -> Brush = {
         Brush.horizontalGradient(listOf(Color.Transparent, Color.Transparent))
-    }
+    },
 ): Modifier {
     val runtimeEffect = remember(shader) { buildEffect(shader) }
     var size: Size by remember { mutableStateOf(Size(-1f, -1f)) }
@@ -131,7 +133,11 @@ fun Modifier.shaderBackground(
             }
         }
 
-        runtimeEffect.updateUniforms((time * speed * speedModifier).round(3), size.width, size.height) // set uniforms for the shaders
+        runtimeEffect.updateUniforms(
+            (time * speed * speedModifier).round(3),
+            size.width,
+            size.height
+        ) // set uniforms for the shaders
     }
 
     return this then Modifier.onGloballyPositioned {
