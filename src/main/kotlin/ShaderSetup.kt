@@ -1,10 +1,5 @@
 import androidx.compose.animation.core.withInfiniteAnimationFrameMillis
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Size
@@ -78,7 +73,9 @@ internal interface RuntimeEffect {
 }
 
 class NonAndroidRuntimeEffect(shader: Shader) : RuntimeEffect {
-    private val compositeRuntimeEffect = kotlin.runCatching { org.jetbrains.skia.RuntimeEffect.makeForShader(shader.sksl) }.getOrNull()
+    private val compositeRuntimeEffect = runCatching { org.jetbrains.skia.RuntimeEffect.makeForShader(shader.sksl) }
+        .onFailure { it.printStackTrace() }
+        .getOrNull()
     private val compositeShaderBuilder = compositeRuntimeEffect?.let { RuntimeShaderBuilder(it) }
 
     override val supported: Boolean = true
