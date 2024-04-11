@@ -113,6 +113,7 @@ internal fun buildEffect(shader: Shader): RuntimeEffect {
 fun Modifier.shaderBackground(
     shader: Shader,
     speed: Float = 1f,
+    playState: Boolean = true,
     fallback: () -> Brush = {
         Brush.horizontalGradient(listOf(Color.Transparent, Color.Transparent))
     },
@@ -124,8 +125,8 @@ fun Modifier.shaderBackground(
         var startMillis = remember(shader) { -1L }
         val speedModifier = shader.speedModifier
 
-        val time by produceState(0f, speedModifier) {
-            while (true) {
+        val time by produceState(0f, speedModifier, playState) {
+            while (playState) {
                 withInfiniteAnimationFrameMillis {
                     if (startMillis < 0) startMillis = it
                     value = ((it - startMillis) / 16.6f) / 10f

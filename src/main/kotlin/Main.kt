@@ -7,6 +7,8 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CopyAll
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,6 +31,8 @@ fun App() {
     var shaderText by remember { mutableStateOf(defaultShaderText) }
     var shaderText2 by remember { mutableStateOf(defaultShaderText) }
     var realtime by remember { mutableStateOf(true) }
+
+    var play by remember { mutableStateOf(true) }
 
     val shader by remember(shaderText) {
         derivedStateOf {
@@ -93,6 +97,17 @@ fun App() {
                                 )
                             }
 
+                            IconToggleButton(
+                                play,
+                                onCheckedChange = { play = it },
+                            ) {
+                                if (play) {
+                                    Icon(Icons.Default.PlayArrow, null)
+                                } else {
+                                    Icon(Icons.Default.Pause, null)
+                                }
+                            }
+
                             Button(
                                 onClick = { shaderText = shaderText2 }
                             ) { Text("Submit") }
@@ -138,7 +153,7 @@ fun App() {
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight(),
-                        cardBack = Modifier.shaderBackground(shader)
+                        cardBack = Modifier.shaderBackground(shader, playState = play)
                     )
 
                     var lineTops by remember { mutableStateOf(emptyArray<Float>()) }
