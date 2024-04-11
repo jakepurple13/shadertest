@@ -4,6 +4,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CopyAll
@@ -177,7 +178,7 @@ fun App() {
                                 )
                             ),
                             modifier = Modifier
-                                .weight(1f)
+                                .weight(2f)
                                 .padding(2.dp)
                                 .fillMaxWidth(),
                             onTextLayout = { result ->
@@ -208,8 +209,14 @@ fun App() {
                                 .fillMaxWidth()
                                 .verticalScroll(rememberScrollState())
                         ) {
-                            currentIssue?.stackTraceToString()?.let {
-                                Text(it, modifier = Modifier.padding(4.dp))
+                            currentIssue?.message?.let {
+                                SelectionContainer {
+                                    Text(
+                                        it,
+                                        color = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.padding(4.dp)
+                                    )
+                                }
                             }
                         }
                     }
