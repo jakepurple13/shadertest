@@ -1,3 +1,4 @@
+import androidx.compose.animation.*
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -25,6 +26,8 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import org.intellij.lang.annotations.Language
 
+const val MAIN_FUNCTION = "vec4 main( vec2 fragCoord )"
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 @Preview
@@ -32,7 +35,6 @@ fun App() {
     var shaderText by remember { mutableStateOf(defaultShaderText) }
     var shaderText2 by remember { mutableStateOf(defaultShaderText) }
     var realtime by remember { mutableStateOf(true) }
-
     var play by remember { mutableStateOf(true) }
 
     val shader by remember(shaderText) {
@@ -55,6 +57,10 @@ fun App() {
 
             }
         }
+    }
+
+    val hasMainFunction by remember {
+        derivedStateOf { shaderText2.contains(MAIN_FUNCTION) }
     }
 
     LaunchedEffect(shaderText2, realtime) {
@@ -164,6 +170,7 @@ fun App() {
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
+                            .animateContentSize()
                     ) {
                         BasicTextField(
                             shaderText2,
@@ -203,19 +210,40 @@ fun App() {
                             }
                         )
 
-                        OutlinedCard(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxWidth()
-                                .verticalScroll(rememberScrollState())
+                        AnimatedVisibility(
+                            !hasMainFunction,
+                            modifier = Modifier.weight(.25f)
                         ) {
-                            currentIssue?.message?.let {
+                            OutlinedCard {
                                 SelectionContainer {
                                     Text(
-                                        it,
+                                        "Cannot find:\n$MAIN_FUNCTION",
                                         color = MaterialTheme.colorScheme.error,
                                         modifier = Modifier.padding(4.dp)
                                     )
+                                }
+                            }
+                        }
+
+                        AnimatedVisibility(
+                            currentIssue != null,
+                            enter = slideInVertically { it } + fadeIn(),
+                            exit = slideOutVertically { it } + fadeOut(),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            OutlinedCard(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .verticalScroll(rememberScrollState())
+                            ) {
+                                currentIssue?.message?.let {
+                                    SelectionContainer {
+                                        Text(
+                                            it,
+                                            color = MaterialTheme.colorScheme.error,
+                                            modifier = Modifier.padding(4.dp)
+                                        )
+                                    }
                                 }
                             }
                         }
