@@ -21,9 +21,14 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import com.wakaztahir.codeeditor.model.CodeLang
+import com.wakaztahir.codeeditor.prettify.PrettifyParser
+import com.wakaztahir.codeeditor.theme.CodeThemeType
+import com.wakaztahir.codeeditor.utils.parseCodeAsAnnotatedString
 import org.intellij.lang.annotations.Language
 
 const val MAIN_FUNCTION = "vec4 main( vec2 fragCoord )"
@@ -34,7 +39,22 @@ const val MAIN_FUNCTION = "vec4 main( vec2 fragCoord )"
 fun App() {
     var shaderText by remember { mutableStateOf(defaultShaderText) }
     var shaderText2 by remember { mutableStateOf(defaultShaderText) }
-    var realtime by remember { mutableStateOf(true) }
+
+    // Step 1. Declare Language & Code
+    val language = CodeLang.C
+
+    // Step 2. Create Parser & Theme
+    val parser = remember { PrettifyParser() } // try getting from LocalPrettifyParser.current
+    val themeState by remember { mutableStateOf(CodeThemeType.Monokai) }
+    val theme = remember(themeState) { themeState.theme }
+    fun parse(text: String) = parseCodeAsAnnotatedString(
+        parser = parser,
+        theme = theme,
+        lang = language,
+        code = text
+    )
+    // Step 3. Parse Code For Highlighting
+    var shaderText3 by remember { mutableStateOf(TextFieldValue(parse(defaultShaderText))) }
     var play by remember { mutableStateOf(true) }
 
     val shader by remember(shaderText) {
@@ -60,13 +80,11 @@ fun App() {
     }
 
     val hasMainFunction by remember {
-        derivedStateOf { shaderText2.contains(MAIN_FUNCTION) }
+        derivedStateOf { shaderText3.text.contains(MAIN_FUNCTION) }
     }
 
-    LaunchedEffect(shaderText2, realtime) {
-        if (realtime) {
-            shaderText = shaderText2
-        }
+    LaunchedEffect(shaderText3) {
+        shaderText = shaderText3.text
     }
 
     MaterialTheme(darkColorScheme()) {
@@ -80,7 +98,7 @@ fun App() {
                             IconButton(
                                 onClick = {
                                     clipboard.setText(
-                                        buildAnnotatedString { append(shaderText2) }
+                                        buildAnnotatedString { append(shaderText3.text) }
                                     )
                                 }
                             ) { Icon(Icons.Default.CopyAll, null) }
@@ -94,15 +112,6 @@ fun App() {
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text("Realtime Shader")
-                                Switch(
-                                    realtime,
-                                    onCheckedChange = { realtime = it },
-                                )
-                            }
 
                             IconToggleButton(
                                 play,
@@ -115,15 +124,34 @@ fun App() {
                                 }
                             }
 
-                            Button(
-                                onClick = { shaderText = shaderText2 }
-                            ) { Text("Submit") }
+                            /*Button(
+                                onClick = {
+                                    language.langProvider
+                                        ?.let { parser.parse(it, shaderText3.text) }
+                                        ?.let {
+                                            shaderText3 =
+                                                shaderText3.copy(annotatedString = it.toAnnotatedString(theme, shaderText3.text))
+                                        }
+
+                                    //shaderText2 = Formatter().formatSource(shaderText2)
+                                }
+                            ) {
+                                Text("Format")
+                            }*/
 
                             Button(
                                 onClick = {
                                     shaderText2 = shaderText2
                                         .replace("iTime", "uTime")
                                         .replace("iResolution", "uResolution")
+
+                                    shaderText3 = shaderText3.copy(
+                                        annotatedString = parse(
+                                            shaderText3.text
+                                                .replace("iTime", "uTime")
+                                                .replace("iResolution", "uResolution")
+                                        )
+                                    )
                                 }
                             ) { Text("Replace i with u") }
                         }
@@ -173,6 +201,46 @@ fun App() {
                             .animateContentSize()
                     ) {
                         BasicTextField(
+                            modifier = Modifier
+                                .weight(2f)
+                                .padding(2.dp)
+                                .fillMaxWidth(),
+                            value = shaderText3,
+                            onValueChange = { shaderText3 = it.copy(annotatedString = parse(it.text)) },
+                            onTextLayout = { result ->
+                                lineTops = Array(result.lineCount) { result.getLineTop(it) }
+                            },
+                            textStyle = MaterialTheme.typography.bodyLarge.copy(
+                                color = MaterialTheme.colorScheme.onSurface
+                            ),
+                            cursorBrush = Brush.sweepGradient(
+                                listOf(
+                                    MaterialTheme.colorScheme.onSurface,
+                                    MaterialTheme.colorScheme.onSurface
+                                )
+                            ),
+                            decorationBox = {
+                                Row(
+                                    modifier = Modifier.verticalScroll(rememberScrollState())
+                                ) {
+                                    if (lineTops.isNotEmpty()) {
+                                        Box(modifier = Modifier.padding(horizontal = 4.dp)) {
+                                            lineTops.forEachIndexed { index, top ->
+                                                Text(
+                                                    text = (index + 1).toString(),
+                                                    modifier = Modifier.offset(y = with(density) { top.toDp() }),
+                                                    color = MaterialTheme.colorScheme.onBackground.copy(.3f)
+                                                )
+                                            }
+                                        }
+                                    }
+                                    it()
+                                }
+                            }
+                        )
+
+                        //If the user does not have github stuff set up
+                        /*BasicTextField(
                             shaderText2,
                             onValueChange = { shaderText2 = it },
                             textStyle = MaterialTheme.typography.bodyLarge.copy(
@@ -208,7 +276,7 @@ fun App() {
                                     it()
                                 }
                             }
-                        )
+                        )*/
 
                         AnimatedVisibility(
                             !hasMainFunction,
@@ -287,6 +355,9 @@ fun EmptyCard(
 val defaultShaderText = """
 uniform float uTime;
 uniform vec3 uResolution;
+
+//Is upside down?
+// uv.y = -uv.y;
             
 vec4 main( vec2 fragCoord ) {
     // Normalized pixel coordinates (from 0 to 1)

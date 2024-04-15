@@ -1,4 +1,6 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import java.io.FileInputStream
+import java.util.*
 
 plugins {
     kotlin("jvm")
@@ -12,6 +14,16 @@ repositories {
     mavenCentral()
     maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
     google()
+    maven("https://jitpack.io")
+    maven("https://maven.pkg.github.com/Qawaz/compose-code-editor") {
+        name = "GitHubPackages"
+        credentials {
+            val githubProperties = Properties()
+            githubProperties.load(FileInputStream(rootProject.file("local.properties")))
+            username = githubProperties["gpr.user"] as String? ?: System.getenv("USERNAME")
+            password = githubProperties["gpr.key"] as String? ?: System.getenv("TOKEN")
+        }
+    }
 }
 
 dependencies {
@@ -22,6 +34,7 @@ dependencies {
     implementation(compose.desktop.currentOs)
     implementation(compose.material3)
     implementation(compose.materialIconsExtended)
+    implementation("com.wakaztahir:codeeditor:3.0.5")
 }
 
 compose.desktop {

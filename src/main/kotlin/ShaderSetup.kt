@@ -68,6 +68,8 @@ internal interface RuntimeEffect {
      */
     fun updateUniforms(time: Float, width: Float, height: Float)
 
+    fun updateCustomUniform(block: ((RuntimeShaderBuilder) -> Unit)? = null) = Unit
+
     /**
      * Builds an updates ShaderBrush
      */
@@ -101,6 +103,12 @@ class NonAndroidRuntimeEffect(shader: Shader) : RuntimeEffect {
         ready = width > 0 && height > 0
     }
 
+    override fun updateCustomUniform(block: ((RuntimeShaderBuilder) -> Unit)?) {
+        if (block != null && compositeShaderBuilder != null) {
+            block(compositeShaderBuilder)
+        }
+    }
+
     override fun build(): Brush? {
         return compositeShaderBuilder?.makeShader()?.let { ShaderBrush(it) }
     }
@@ -128,6 +136,7 @@ fun Modifier.shaderBackground(
     fallback: () -> Brush = {
         Brush.horizontalGradient(listOf(Color.Transparent, Color.Transparent))
     },
+    customUniformUpdate: ((RuntimeShaderBuilder) -> Unit)? = null,
 ): Modifier {
     val runtimeEffect = remember(shader) { buildEffect(shader) }
     var size: Size by remember { mutableStateOf(Size(-1f, -1f)) }
@@ -150,6 +159,10 @@ fun Modifier.shaderBackground(
             size.width,
             size.height
         ) // set uniforms for the shaders
+
+        if (customUniformUpdate != null) {
+            runtimeEffect.updateCustomUniform(customUniformUpdate)
+        }
     }
 
     return this then Modifier.onGloballyPositioned {
