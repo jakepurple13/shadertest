@@ -35,6 +35,8 @@ dependencies {
     implementation(compose.material3)
     implementation(compose.materialIconsExtended)
     implementation("com.wakaztahir:codeeditor:3.0.5")
+    implementation("com.diffplug.spotless:spotless-lib:2.45.0")
+    implementation("com.diffplug.spotless:spotless-lib-extra:2.45.0")
 }
 
 compose.desktop {

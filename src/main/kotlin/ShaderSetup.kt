@@ -89,17 +89,6 @@ class NonAndroidRuntimeEffect(shader: Shader) : RuntimeEffect {
     override fun updateUniforms(time: Float, width: Float, height: Float) {
         compositeShaderBuilder?.uniform("uResolution", width, height, width / height)
         compositeShaderBuilder?.uniform("uTime", time)
-        //An example for things to add
-        /*val date = Date()
-        val d = System.currentTimeMillis().milliseconds
-        //(year, month, day, time in seconds)
-        compositeShaderBuilder?.uniform(
-            "uDate",
-            date.year.toFloat(),
-            date.month.toFloat(),
-            d.inWholeDays.toFloat(),
-            d.inWholeSeconds.toFloat()//date.seconds.toFloat()
-        )*/
         ready = width > 0 && height > 0
     }
 
